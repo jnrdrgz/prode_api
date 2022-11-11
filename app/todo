@@ -1,0 +1,2 @@
+todo:
+	table many-to-many tournaments__admins for tournaments admins 

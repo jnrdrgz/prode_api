@@ -1,0 +1,92 @@
+Player
+	Name
+	Price
+	Position
+	TeamId
+
+Player_Match_Points
+	PlayerId
+	MatchId
+	Points
+
+Player_FantasyTeam
+	PlayerId
+	FantasyTeamId
+
+//Tournament
+//	Name
+
+FantasyTournament
+	Name
+	TournamentId
+
+GameWeek
+	Number
+//	TournamentId
+	Matches
+
+Match
+	HomeTeamId
+	AwayTeamId
+	GameweekId
+
+Team
+	Name
+
+FantasyTeam
+	Name
+	OwnerId
+	GameWeekId
+	Players
+
+User
+	Name
+	FantasyTeamId
+
+Config
+	max_cambios_fecha
+	max_presupuesto
+	descuento_puntos_por_cambio_extra
+	formaciones_validas
+	fecha_actual
+	hora_inicio_fecha_actual
+
+__#extra
+//FantasyMatch?
+//	HomeUserId AwayUserId GameWeekId???
+//comodines
+//multiple fantasy teams?
+__#extra
+
+¿***¿ === opcional
+
+regular_users
+/login
+	post user {name, }
+/team
+	post fantasy_team {name, players: [id_list (?string)], owner}
+/team/:id
+	patch fantasy_team {name, players: [id_list (?string)], owner}
+/team, /team/:id
+	get fantasy_team {name, players: [id_list (?string)], owner}
+/table
+	get table {[{username, points}]}
+/points/:user_id/¿fecha¿
+	get points {[{points}]} == get FantasyTeam where OwnerId and GameWeekId get all players then get Player_gweek_Points where player and gameweek
+	get FantasyTeam where OwnerId get all players then get Player_GameWeek_Points where player
+
+admin
+/game_week
+	post game_week {number, } //matches as array?
+/game_week/edit
+	patch game_week {number, }
+/match
+	post match {hometeam, awayteam}
+/player/points
+	post Player_gweek_Points {playerid, gameWeekid, points}
+superadmin
+
+
+outside_app
+/config get
+
