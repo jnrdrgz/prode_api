@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel
 from typing import Optional, Any
 
@@ -19,6 +19,8 @@ class UserBase(BaseModel):
     is_superuser: bool = False
     is_admin: bool = False
     full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     has_team: Optional[bool] = None
     
 # Properties to receive via API on creation
@@ -87,12 +89,14 @@ class GameWeekBase(BaseModel):
     name: str
     status: Optional[str] = "not_started"
     current: Optional[bool] = False
+    init_time: Optional[datetime] = False
 
 # Properties to receive on item creation
 class GameWeekCreate(GameWeekBase):
     name: str
     status: Optional[str] = "not_started"
     current: Optional[bool] = False
+    init_time: Optional[datetime] = False
 
 # Properties to receive on item update
 class GameWeekUpdate(GameWeekBase):
@@ -106,6 +110,7 @@ class GameWeekInDBBase(GameWeekBase):
     current: bool
     status: str
     tournament_id: int
+    init_time: datetime
 
     class Config:
         orm_mode = True

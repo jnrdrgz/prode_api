@@ -9,6 +9,8 @@ class User(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String, index=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
@@ -45,6 +47,7 @@ class GameWeek(Base):
 
     tournament_id = Column(Integer, ForeignKey("tournaments.id"))
     tournament = relationship("Tournament", back_populates="game_weeks")
+    init_time = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now)
 
 class Match(Base):

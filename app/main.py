@@ -8,7 +8,7 @@ from fastapi.encoders import jsonable_encoder
 
 from . import models, schemas, security, deps
 from .database import SessionLocal, engine
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone, timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
@@ -66,7 +66,7 @@ def get_table():
 
 
 @app.post("/api/register", )#response_model=schemas.User
-def register(*, db: Session = Depends(get_db), password: str = Body(...), username: str = Body(...), full_name: str = Body(...),):
+def register(*, db: Session = Depends(get_db), password: str = Body(...), username: str = Body(...), first_name: str = Body(...), last_name: str = Body(...), full_name: str = Body(...),):
     """
     Create new user without the need to be logged in.
     """
@@ -75,23 +75,26 @@ def register(*, db: Session = Depends(get_db), password: str = Body(...), userna
     #        status_code=403,
     #        detail="Open user registration is forbidden on this server",
     #    )
-    user = db.query(models.User).filter(models.User.username == username).first()
+    user = db.query(models.User).filter(models.User.username == username.lower()).first()
     if user:
         return ErrorResponse("Ya hay un usuario con el mismo nombre.")
         #raise HTTPException(
         #    status_code=400,
         #    detail="The user with this username already exists in the system",
         #)
-    user_in = schemas.UserCreate(password=password,username=username,full_name=full_name,)
+    user_in = schemas.UserCreate(password=password,username=username,full_name=full_name,first_name=first_name,last_name=last_name)
+ 
     if username == "juan":
         user_in.is_admin = True
 
     db_obj = models.User(
-        username=user_in.username,
+        username=user_in.username.lower(),
         hashed_password=security.get_password_hash(user_in.password),
         full_name=user_in.full_name,
         is_superuser=user_in.is_superuser,
         is_admin=user_in.is_admin,
+        first_name=user_in.first_name,
+        last_name=user_in.last_name
     )
     db.add(db_obj)
     db.commit()
@@ -244,6 +247,33 @@ def get_description_short(description):
     equipos = description.split("-")
     return f'{equipos[0][:3].upper()}-{equipos[1][:3].upper()}'
 
+
+def check_if_limit_date_has_passed(db, match_id):
+    match = db.query(models.Match).filter_by(id=match_id).first()
+
+    game_week = db.query(models.GameWeek).filter_by(id=match.game_week_id).first()
+
+    if not game_week.init_time:
+        return False
+
+    date_now = datetime.now(timezone.utc)-timedelta(hours=3)
+    date_now = date_now.replace(tzinfo=None)
+    limit_date = game_week.init_time
+
+    if date_now > limit_date:
+        return True
+
+    return False
+
+def check_if_user_already_has_prediction(db, user_id, match_id):
+    prediction = db.query(models.Prediction).filter(models.Prediction.match_id == match_id).filter(models.Prediction.user_id == user_id).first()
+
+    if prediction:
+        return True
+
+    return False
+
+
 ###########################################
 ##############end utils###################
 ###########################################
@@ -377,6 +407,9 @@ def post_tournamet(db: Session = Depends(get_db), current_user: models.User = De
 
     game_week_in = schemas.GameWeekCreate(name=body["name"], )
     
+    if "init_time" in body.keys():
+        game_week_in.init_time = body["init_time"]
+
     db_obj = models.GameWeek(
         name=game_week_in.name,
         tournament_id=body["tournament_id"],
@@ -442,11 +475,22 @@ def post_matches_bulk_str(db: Session = Depends(get_db), current_user: models.Us
             is_current = True
             change_current_current(db, body["tournament_id"])
 
+        if "game_week_deadline" in body.keys():
+            if body["game_week_deadline"]:
+                game_week_in.init_time = datetime.strptime(body["game_week_deadline"], '%Y-%m-%dT%H:%M')
+                print(game_week_in.init_time)
+                print(type(game_week_in.init_time))
+            else:
+                game_week_in.init_time = None
+        else:
+            game_week_in.init_time = None
+
         db_obj = models.GameWeek(
             name=game_week_in.name,
             tournament_id=body["tournament_id"],
             status="not_started",
             current=is_current,
+            init_time=game_week_in.init_time,
         )
         
         gmweek = add_to_db(db, db_obj)
@@ -491,9 +535,31 @@ def post_predictions_bulk(db: Session = Depends(get_db), current_user: models.Us
         return ErrorResponse("Forbidden")
 
     if not "predictions" in body.keys():
-        return ErrorResponse("no predictions id specified")
+        return ErrorResponse("No hay pronósticos")
 
-    #FIXME: check if user does not have predictions in every match
+        if not len(body["predictions"]):
+            return ErrorResponse("No hay pronósticos")
+    
+
+    if check_if_limit_date_has_passed(db, body["predictions"][0]["match_id"]):
+        return ErrorResponse("Fecha cerrada")
+
+
+    predictions_dict = {}
+    #check if user does not have predictions in every match
+    for prediction in body["predictions"]:
+        if check_if_user_already_has_prediction(db, current_user.id, prediction["match_id"]):
+            return ErrorResponse("El usuario ya cargó está fecha")
+
+        if prediction["score"] in predictions_dict.keys():
+            predictions_dict[prediction["score"]] += 1
+        else:
+            predictions_dict[prediction["score"]] = 1
+
+    for p in predictions_dict.values():
+        if p > 7:
+            return ErrorResponse("más de 7 prodes iguales")
+
 
     predictions = []
     for prediction in body["predictions"]:
