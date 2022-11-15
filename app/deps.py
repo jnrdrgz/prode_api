@@ -33,7 +33,8 @@ def get_current_user(
         token_data = schemas.TokenPayload(**payload)
         print("payload", token_data)
         user_id = payload["sub"].split("-")[0]
-        print("payload", user_id)
+        username = payload["sub"].split("-")[1]
+        print("payload", user_id, username)
     except (jwt.JWTError, ValidationError):
         print("ERROR")
         #raise HTTPException(
@@ -41,7 +42,7 @@ def get_current_user(
         #    detail="Could not validate credentials",
         #)
         return None
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).filter(models.User.id == user_id).filter(models.User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user

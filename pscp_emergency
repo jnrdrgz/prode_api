@@ -1,0 +1,2 @@
+pscp -i "C:\Users\jnrdrgz\Desktop\old\dsktp\nsrc\l9\a.ppk" -r root@31.220.48.222:/root/prodes_api/prode_api/prode_app.db C:\Users\jnrdrgz\Desktop\prg\
+pscp -i "C:\Users\jnrdrgz\Desktop\old\dsktp\nsrc\l9\a.ppk" -r C:\Users\jnrdrgz\Desktop\prg\prode_app.db root@31.220.48.222:/root/prodes_api/prode_api/

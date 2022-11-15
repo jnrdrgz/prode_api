@@ -31,7 +31,7 @@ app.add_middleware(
 )
 
 #################UTILS
-def ErrorResponse(error_str, message=""):
+def ErrorResponse(error_str, message="", ):
     return {"error": error_str, "message": message}
 
 #################END_UTILS
@@ -82,6 +82,13 @@ def register(*, db: Session = Depends(get_db), password: str = Body(...), userna
         #    status_code=400,
         #    detail="The user with this username already exists in the system",
         #)
+
+    if username:
+        allowed_chars = "abcdefghijklmnopqrstuvwxyz123456789_"
+        for l in username.lower():
+            if l not in allowed_chars:
+                return ErrorResponse("Caracter no permitido en nombre de usuario. Solo se permiten letras, numeros y guión bajo.")
+
     user_in = schemas.UserCreate(password=password,username=username,full_name=full_name,first_name=first_name,last_name=last_name)
  
     if username == "juan":
@@ -110,11 +117,11 @@ def login_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordR
     """
     #user = crud.user.authenticate(db, email=form_data.username, password=form_data.password)
     #user = self.get_by_email(db, email=email)
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
+    user = db.query(models.User).filter(models.User.username == form_data.username.lower()).first()
     if not user:
-        return ErrorResponse("Usuario inexistente")
+        return ErrorResponse("Usuario inexistente.")
     if not security.verify_password(form_data.password, user.hashed_password):
-        return ErrorResponse("Nombre de usuario o contraseña equivocada")
+        return ErrorResponse("Nombre de usuario o contraseña equivocada.")
     #return user
 
     if not user:
