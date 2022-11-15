@@ -13,7 +13,7 @@ project_root_absolute = project_root.resolve()
 static_root_absolute = project_root_absolute 
 
 #SQLALCHEMY_DATABASE_URL = 'sqlite:///C:\\Users\\jnrdrgz\\Desktop\\prg\\prode_api\\test.db?check_same_thread=False'
-SQLALCHEMY_DATABASE_URL = 'sqlite:///' + str(project_root_absolute) +'/prode_app_test.db?check_same_thread=False'
+SQLALCHEMY_DATABASE_URL = 'sqlite:///' + str(project_root_absolute) +'/prode_app.db?check_same_thread=False'
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
