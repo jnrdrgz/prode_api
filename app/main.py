@@ -656,16 +656,15 @@ def get_tournament_standings(tournament_id, game_week_id, db: Session = Depends(
     participantes = db.query(models.TournamentsUsers).filter(models.TournamentsUsers.tournament_id == tournament_id).all()
     #print("asfasdsd", len(participantes))
     game_weeks = db.query(models.GameWeek).filter(models.GameWeek.tournament_id == tournament_id).all()
+    #fixme: fixear tambien en webapp
+    this_game_week = db.query(models.GameWeek).filter(models.GameWeek.id == game_week_id).first()
   
     table_data = []
 
     all_predictions = []
 
     for participante in participantes:
-
-
         predictions = db.query(models.Prediction).filter(models.Prediction.user_id == participante.user_id).all()
-        predictions__ = db.query(models.Prediction).filter(models.Prediction.user_id == 1031).all()
 
         points = 0
         plenos = 0
@@ -677,7 +676,6 @@ def get_tournament_standings(tournament_id, game_week_id, db: Session = Depends(
             match = db.query(models.Match).filter(models.Match.id == prediction.match_id).first()
             if int(match.game_week_id) == int(game_week_id):
                 user_predictions[get_description_short(match.description)] = prediction.score
-                print("PREDICTIONS", prediction.id, " - ", prediction.score)
                 if match.score:
                     #print(prediction.score, match.score, get_points(prediction.score, match.score))
                     points_dict = get_points(prediction.score, match.score)
@@ -698,7 +696,7 @@ def get_tournament_standings(tournament_id, game_week_id, db: Session = Depends(
     table_data = sorted(table_data, key=lambda x : (x["puntos"], x["plenos"], x["goles"]), reverse=True)
     matches = [{"short": get_description_short(x.description), "score": x.score} for x in db.query(models.Match).filter(models.Match.game_week_id == game_week_id).all()]
 
-    return {"standings": table_data, "predictions": all_predictions, "matches": matches, "game_weeks": game_weeks}
+    return {"standings": table_data, "predictions": all_predictions, "matches": matches, "game_weeks": game_weeks, "this_game_week": this_game_week}
 
 
 @app.post("/api/add_user_to_tournament")
