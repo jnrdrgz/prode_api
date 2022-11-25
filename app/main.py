@@ -168,6 +168,31 @@ def test_token(db: Session = Depends(get_db),current_user: models.User = Depends
     ##print("user_unique_id", user_unique_team_id)
     return schemas.User(**obj)
 
+
+
+
+@app.patch("/api/users/reset_password/{user_id}", )
+def get_tournament_current_game_week(user_id, db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_user)):
+    if not current_user:
+        return ErrorResponse("Forbidden")
+
+    if not current_user.is_admin:
+        return ErrorResponse("Forbidden")
+
+    try:
+        user = db.query(models.User).filter_by(id=user_id).first()
+        if user:
+            user.hashed_password = "$2b$12$XP4HHjRyEmjQlmzwUnu.gufwC6osaWX8lDNIsWMayo4vwnsnlxd9O"
+            db.commit()
+            return {"data": "ok"}
+        else:
+            return ErrorResponse("User not found")
+    except Exception as inst:
+        return ErrorResponse("Server error",  f"server error: {type(inst)} {inst}")
+ 
+
+
+
 ###########################################
 ##############init utils###################
 ###########################################
