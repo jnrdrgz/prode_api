@@ -588,9 +588,9 @@ def post_predictions_bulk(db: Session = Depends(get_db), current_user: models.Us
         else:
             predictions_dict[prediction["score"]] = 1
 
-    for p in predictions_dict.values():
-        if p > 7:
-            return ErrorResponse("más de 7 prodes iguales")
+    #for p in predictions_dict.values():
+    #    if p > 7:
+    #        return ErrorResponse("más de 7 prodes iguales")
 
 
     predictions = []
