@@ -12,6 +12,9 @@ from datetime import date, timedelta, datetime, timezone, timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
+import os
+
+import hashlib
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -168,11 +171,30 @@ def test_token(db: Session = Depends(get_db),current_user: models.User = Depends
     ##print("user_unique_id", user_unique_team_id)
     return schemas.User(**obj)
 
+def hash_username(username):
+    forgot_secret = os.getenv("FORGOTSECRET")
 
+    return (hashlib.sha256(f"{username}{forgot_secret}".encode())).hexdigest()
 
+@app.post("/api/forgot")
+def forgot(*, db: Session = Depends(get_db), password: str = Body(...), hash: str = Body(...)):
+    if not password:
+        return ErrorResponse("Password field empty")
+
+    if not hash:
+        return ErrorResponse("Invalid hash")
+
+    users = db.query(models.User).all()
+    for user in users:
+        if(hash_username(user.username) == hash):
+            user.hashed_password = security.get_password_hash(password)
+            db.commit()
+            return {"data": "ok"}
+
+    return ErrorResponse("User not found")
 
 @app.patch("/api/users/reset_password/{user_id}", )
-def get_tournament_current_game_week(user_id, db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_user)):
+def reset_pass(user_id, db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_user)):
     if not current_user:
         return ErrorResponse("Forbidden")
 
