@@ -191,7 +191,10 @@ def forgot(*, db: Session = Depends(get_db), password: str = Body(...), hash: st
             db.commit()
             return {"data": "ok"}
 
-    return ErrorResponse("User not found")
+    forgot_secret = os.getenv("FORGOTSECRET")
+    hash_ = hash_username(user.username)
+    #return ErrorResponse("User not found - " + forgot_secret + " " + hash_)
+    return ErrorResponse(f"User not found - {forgot_secret} - {hash_}")
 
 @app.patch("/api/users/reset_password/{user_id}", )
 def reset_pass(user_id, db: Session = Depends(get_db), current_user: models.User = Depends(deps.get_current_user)):
